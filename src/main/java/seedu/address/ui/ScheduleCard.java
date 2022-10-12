@@ -47,7 +47,7 @@ public class ScheduleCard extends UiPart<Region> {
         name.setText(person.getName().fullName);
         phone.setText(person.getPhone().value);
         address.setText(person.getAddress().value);
-        classTime.setText("1-2pm"); // To be replaced with the actual class time from the person
+        classTime.setText(person.getAClass().toTimeString());
         attendance.setText("[ ]");
     }
 
