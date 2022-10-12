@@ -34,6 +34,8 @@ public class ScheduleCard extends UiPart<Region> {
     private Label address;
     @FXML
     private Label classTime;
+    @FXML
+    private Label attendance;
 
     /**
      * Creates a {@code PersonCode} with the given {@code Person} and index to display.
@@ -46,6 +48,7 @@ public class ScheduleCard extends UiPart<Region> {
         phone.setText(person.getPhone().value);
         address.setText(person.getAddress().value);
         classTime.setText("1-2pm"); // To be replaced with the actual class time from the person
+        attendance.setText("[ ]");
     }
 
     @Override

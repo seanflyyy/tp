@@ -138,6 +138,10 @@
     -fx-text-fill: #010504;
 }
 
+.cell_super_big_label {
+    -fx-font-size: 20px;
+}
+
 .stack-pane {
      -fx-background-color: derive(#1d1d1d, 20%);
 }
