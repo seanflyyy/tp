@@ -171,8 +171,14 @@ public class UniqueStudentList implements Iterable<Student> {
 
         Class newClass = new Class();
         if (list.size() == 0) {
-            newClass = new Class(currDate, tr.startTimeRange,
-                    tr.startTimeRange.plusMinutes(tr.duration));
+            if (LocalTime.now().compareTo(tr.endTimeRange) >= 0) {
+                newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
+                        tr.startTimeRange.plusMinutes(tr.duration));
+            } else {
+                newClass = new Class(currDate, tr.startTimeRange,
+                        tr.startTimeRange.plusMinutes(tr.duration));
+            }
+
             return newClass;
         } else if (list.size() == 1) {
             return findAvailableClassWithSingleRecord(tr, currDate, list);
