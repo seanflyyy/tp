@@ -154,7 +154,7 @@ public class UniqueStudentList implements Iterable<Student> {
                         && student.getAClass().endTime != null
                         && student.getAClass().date != null
                         && student.getAClass().date.compareTo(currDate) > 0)
-                .sorted(Student::compareTo)
+                .sorted(Student::compareToByClassAsc)
                 .map((element) -> element.getAClass())
                 .collect(Collectors.toList());
         List<Class> listSameDay = internalList
@@ -163,7 +163,7 @@ public class UniqueStudentList implements Iterable<Student> {
                         && student.getDisplayedClass().endTime != null
                         && student.getDisplayedClass().date != null
                         && student.getDisplayedClass().date.compareTo(currDate) == 0)
-                .sorted(Student::compareTo)
+                .sorted(Student::compareToByClassAsc)
                 .map((element) -> element.getDisplayedClass())
                 .collect(Collectors.toList());
         List<Class> list = Stream.concat(listSameDay.stream(), listAfterToday.stream())

@@ -494,15 +494,19 @@ Finds all students with a particular tag.
 Formats: `find t/tagName`
 
 - Only one tag can be searched at each time.
+- The tag is case-insensitive.
 
 <div markdown="span" class="alert alert-danger">❗ **Caution:** Do not include more than one tag such as find t/python java.
 </div>
 
 Examples:
 
-`find t/python` returns all students who have python as a tag, including students who have other tags on top of the
+* `find t/python` returns all students who have a python tag, including students who have other tags on top of the
 python tag.
-`find t/javascript` returns all students with javascript as a tag and other tags besides javascript.
+* `find t/javascript` returns all students who have a javascript tag, including students who have other tags on top
+of javascript tag 
+* `find t/python t/javascript` returns all students who have javascript and python tags, includings students who have 
+other tags on top of the two tags.
 
 [↑ Back to top](#table-of-contents)
 
@@ -670,8 +674,10 @@ Teacher’s Pet data are saved in the hard disk automatically after any command 
 
 Students' data is saved as a JSON file `[JAR file location]/data/teachersPet.json`. Advanced users are welcome to edit the data file.
 
-<div markdown="span" class="alert alert-warning">⚠️ **Warning:** Proceed with care! If your changes to the data file makes its format invalid,
-Teacher’s Pet will discard all data and start with an empty data file at the next run!
+<div markdown="span" class="alert alert-danger">❗ **Caution:** If your changes to the data file makes its format invalid,
+Teacher’s Pet will not be able to load any data into the app. Do not worry that your data file will be discarded!
+To proceed, you will need to correct any changes you made in order to load the data.
+You may also delete the JSON file o have a new set of generated sample data.
 </div>
 
 [↑ Back to top](#table-of-contents)

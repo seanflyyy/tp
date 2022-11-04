@@ -265,7 +265,7 @@ public class Student {
      * @param student a student object to compare with.
      * @return the result of comparing the two {@code student} object startTime.
      */
-    public int compareTo(Student student) {
+    public int compareToByClassStartTimeAsc(Student student) {
         if (student.aClass.startTime == null && this.aClass.startTime == null) {
             return 0;
         } else if (student.aClass.startTime == null) {
@@ -304,7 +304,7 @@ public class Student {
         } else if (student.aClass.isEmpty()) {
             return -1;
         } else {
-            return this.aClass.compareToByStartTime(student.aClass);
+            return this.aClass.compareToByClassTime(student.aClass);
         }
     }
 
@@ -321,7 +321,7 @@ public class Student {
         } else if (student.aClass.isEmpty()) {
             return -1;
         } else {
-            return -1 * this.aClass.compareToByStartTime(student.aClass);
+            return -1 * this.aClass.compareToByClassTime(student.aClass);
         }
     }
 

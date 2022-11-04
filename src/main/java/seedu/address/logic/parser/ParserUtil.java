@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.StringUtil;
@@ -197,6 +198,8 @@ public class ParserUtil {
             if (!Class.isValidDuration(startTime, endTime)) {
                 throw new ParseException(Class.INVALID_DURATION_ERROR_MESSAGE);
             }
+            // testing not written for code below
+            // as it depends on actual day's datetime data and cannot be statically tested.
             targetDayOfWeek = Arrays.asList(DAYS_OF_WEEK).indexOf(dateStr.toUpperCase());
             LocalDate targetDate = getTargetClassDate(LocalDateTime.now(), startTime);
             return new Class(targetDate, startTime, endTime,
@@ -249,7 +252,7 @@ public class ParserUtil {
             Integer duration = Integer.valueOf(trimmedTimeRange.substring(10));
             if (!Class.isValidDuration(startTime, endTime)
                     || !TimeRange.isValidEndTime(startTime, endTime, duration)) {
-                throw new ParseException(Class.INVALID_DURATION_ERROR_MESSAGE);
+                throw new ParseException(TimeRange.INVALID_DURATION_ERROR_MESSAGE);
             }
             return new TimeRange(startTime, endTime, duration);
         } else {
@@ -358,6 +361,13 @@ public class ParserUtil {
             tagSet.add(parseTag(tagName));
         }
         return tagSet;
+    }
+
+    /**
+     * Parses {@Code Collection<String> tags} into a {@code List<String>}
+     */
+    public static List<String> parseTagsList(Collection<String> tags) throws ParseException {
+        return parseTags(tags).stream().map(tag -> tag.tagName).collect(Collectors.toList());
     }
 
     /**
