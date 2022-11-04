@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -147,15 +148,27 @@ public class UniqueStudentList implements Iterable<Student> {
      */
     public Class findAvailableClass(TimeRange tr) {
         LocalDate currDate = LocalDate.now();
-        List<Student> list = internalList
+        List<Class> listAfterToday = internalList
                 .stream()
                 .filter(student -> student.getAClass().startTime != null
                         && student.getAClass().endTime != null
                         && student.getAClass().date != null
-                        && student.getAClass().date.compareTo(currDate) >= 0
-                        && student.getAClass().startTime.compareTo(LocalTime.now()) >= 0)
+                        && student.getAClass().date.compareTo(currDate) > 0)
                 .sorted(Student::compareTo)
+                .map((element) -> element.getAClass())
                 .collect(Collectors.toList());
+        List<Class> listSameDay = internalList
+                .stream()
+                .filter(student -> student.getDisplayedClass().startTime != null
+                        && student.getDisplayedClass().endTime != null
+                        && student.getDisplayedClass().date != null
+                        && student.getDisplayedClass().date.compareTo(currDate) == 0)
+                .sorted(Student::compareTo)
+                .map((element) -> element.getDisplayedClass())
+                .collect(Collectors.toList());
+        List<Class> list = Stream.concat(listSameDay.stream(), listAfterToday.stream())
+                .collect(Collectors.toList());
+
         Class newClass = new Class();
         if (list.size() == 0) {
             newClass = new Class(currDate, tr.startTimeRange,
@@ -166,7 +179,15 @@ public class UniqueStudentList implements Iterable<Student> {
         }
 
         for (int i = 0; i < list.size(); i++) {
-            Class aFirstClass = list.get(i).getAClass();
+            Class aFirstClass = list.get(i);
+            /*
+                Handle the case where the class is after today's date, in which case
+             */
+
+            if (LocalTime.now().compareTo(aFirstClass.endTime) > 0) {
+                continue;
+            }
+
             if (i == list.size() - 1) {
                 /*
                     if the list.size() - 1, that means that you are only looking at the last element in the list.
@@ -200,7 +221,7 @@ public class UniqueStudentList implements Iterable<Student> {
                 }
                 break;
             }
-            Class aSecondClass = list.get(i + 1).getAClass();
+            Class aSecondClass = list.get(i + 1);
 
             // check whether a class before the first class is possible
             Class fromTrStartTime = new Class(aFirstClass.date, tr.startTimeRange,
@@ -262,16 +283,19 @@ public class UniqueStudentList implements Iterable<Student> {
         return newClass;
     }
 
-    private static Class findAvailableClassWithSingleRecord(TimeRange tr, LocalDate currDate, List<Student> list) {
+    private static Class findAvailableClassWithSingleRecord(TimeRange tr, LocalDate currDate, List<Class> list) {
         Class newClass;
-        Class classToCompare = list.get(0).getAClass();
+        Class classToCompare = list.get(0);
         // When the startTimeRange is before the earliest slot
         assert classToCompare.endTime != null;
         assert classToCompare.startTime != null;
 
-        if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0
-                || (classToCompare.startTime.compareTo(tr.startTimeRange) >= 0
-                && tr.startTimeRange.plusMinutes(tr.duration).compareTo(classToCompare.startTime) <= 0)) {
+        if (LocalTime.now().compareTo(tr.endTimeRange) >= 0 && LocalDate.now().equals(classToCompare.date)) {
+            newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
+                    tr.startTimeRange.plusMinutes(tr.duration));
+        } else if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0
+                    || (classToCompare.startTime.compareTo(tr.startTimeRange) >= 0
+                    && tr.startTimeRange.plusMinutes(tr.duration).compareTo(classToCompare.startTime) <= 0)) {
             newClass = new Class(currDate, tr.startTimeRange,
                     tr.startTimeRange.plusMinutes(tr.duration));
         } else if (classToCompare.startTime.compareTo(tr.endTimeRange) >= 0
