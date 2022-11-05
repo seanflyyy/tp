@@ -146,7 +146,7 @@ public class UniqueStudentList implements Iterable<Student> {
      * @param tr a timeRange object containing the {@code startTime}, {@code endTime} and {@code duration}.
      * @return the next first available Class.
      */
-    public Class findAvailableClass(TimeRange tr) {
+    public Class findAvailableClass(TimeRange tr, LocalTime currTime) {
         LocalDate currDate = LocalDate.now();
         List<Class> listAfterToday = internalList
                 .stream()
@@ -169,32 +169,49 @@ public class UniqueStudentList implements Iterable<Student> {
         List<Class> list = Stream.concat(listSameDay.stream(), listAfterToday.stream())
                 .collect(Collectors.toList());
 
-        Class newClass = new Class();
+        Class newClass = null;
+
+        // Case where there is only 1 class
         if (list.size() == 0) {
-            if (LocalTime.now().compareTo(tr.endTimeRange) >= 0) {
-                newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
-                        tr.startTimeRange.plusMinutes(tr.duration));
+            LocalTime startTime = tr.startTimeRange;
+            LocalTime endTime = startTime.plusMinutes(tr.duration);
+            // Link to design: https://arc.net/e/B15E0B60-817D-4B24-8397-FC0E0B37F8C1
+            if (currTime.compareTo(tr.endTimeRange) >= 0) {
+                // this is the situation where the current time is after and including the endTimeRange
+                newClass = new Class(currDate.plusDays(1), startTime, endTime);
+            } else if (currTime.compareTo(tr.startTimeRange) <= 0) {
+                // this is the situation where the current time is before the startTimeRange
+                newClass = new Class(currDate, startTime, endTime);
             } else {
-                newClass = new Class(currDate, tr.startTimeRange,
-                        tr.startTimeRange.plusMinutes(tr.duration));
+                // this is the situation where the current time is after the startTimeRange and before the endTimeRange
+                LocalTime startTimeFromCurrTime = currTime;
+                LocalTime endTimeFromCurrTime = startTimeFromCurrTime.plusMinutes(tr.duration);
+
+                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
+                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                } else {
+                    newClass = new Class(currDate.plusDays(1), startTime, endTime);
+                }
             }
 
             return newClass;
         } else if (list.size() == 1) {
-            return findAvailableClassWithSingleRecord(tr, currDate, list);
+            // Link to design for 1 class: https://arc.net/e/4F0065DB-C858-4B6D-91D0-50B2879AC26F
+            return findAvailableClassWithSingleRecord(tr, currDate, list, currTime);
         }
 
+
+        // Link to design for more than 2 classes: https://arc.net/e/8D5B34DF-70C5-4A22-8D26-4BFC6CEEABC5
         for (int i = 0; i < list.size(); i++) {
             Class aFirstClass = list.get(i);
-            /*
-                Handle the case where the class is after today's date, in which case
-             */
-
-            if (LocalTime.now().compareTo(aFirstClass.endTime) > 0) {
-                continue;
-            }
 
             if (i == list.size() - 1) {
+                /*
+
+
+                THIS NEEDS TO BE FIXED
+
+                 */
                 /*
                     if the list.size() - 1, that means that you are only looking at the last element in the list.
                     in which case, you are looking at a few cases
@@ -227,38 +244,191 @@ public class UniqueStudentList implements Iterable<Student> {
                 }
                 break;
             }
+            if (currTime.compareTo(tr.endTimeRange) >= 0 && aFirstClass.date.equals(currDate)) {
+                // you want to skip all the classes on the same day if currTime is outside the time window
+                continue;
+            }
             Class aSecondClass = list.get(i + 1);
 
-            // check whether a class before the first class is possible
-            Class fromTrStartTime = new Class(aFirstClass.date, tr.startTimeRange,
-                    tr.startTimeRange.plusMinutes(tr.duration));
-            if (!ClassStorage.hasConflict(fromTrStartTime.startTime, fromTrStartTime.endTime,
-                    aFirstClass.startTime, aFirstClass.endTime)
-                    && !ClassStorage.hasConflict(fromTrStartTime.startTime, fromTrStartTime.endTime,
-                    aSecondClass.startTime, aSecondClass.endTime)) {
-                assert fromTrStartTime.endTime != null;
-                newClass = fromTrStartTime;
-            }
+            LocalTime startTimeFromTr = tr.startTimeRange;
+            LocalTime endTimeFromTr = startTimeFromTr.plusMinutes(tr.duration);
+            LocalTime startTimeFromFirstClass = aFirstClass.endTime;
+            LocalTime endTimeFromFirstClass = startTimeFromFirstClass.plusMinutes(tr.duration);
+            LocalTime startTimeFromSecondClass = aSecondClass.endTime;
+            LocalTime endTimeFromSecondClass = startTimeFromSecondClass.plusMinutes(tr.duration);
+            LocalTime startTimeFromCurrTime = currTime;
+            LocalTime endTimeFromCurrTime = startTimeFromCurrTime.plusMinutes(tr.duration);
 
-            assert aFirstClass.date != null;
+            Class aThirdClass = list.get(i + 1);
+            boolean isNotClashWithThirdClass = aThirdClass == null
+                    ? true
+                    : endTimeFromSecondClass.compareTo(aThirdClass.startTime) <= 0;
+            boolean isNotClashWithThirdClassFromCurrTime = aThirdClass == null
+                    ? true
+                    : endTimeFromCurrTime.compareTo(aThirdClass.startTime) <= 0;
+
+
             if (aFirstClass.date.equals(aSecondClass.date)) {
-                /*
-                 * That means they are on the same day
-                 * 1st case: When they are side by side. Since the case where it is before the class has been handled,
-                 *           we try finding a slot after the end of the secondClass.
-                 * 2nd case: When there is a gap, but it is not big enough. If there is a gap, then it is actually
-                 *           the same situation as the first case so, it becomes <= tr.duration rather than just == 0
-                 *           for the initial first case.
-                 * 3rd case: When there is a gap just nice or too big
-                 */
-                assert aFirstClass.endTime != null;
-                assert aSecondClass.startTime != null;
-                if (aFirstClass.endTime.until(aSecondClass.startTime, ChronoUnit.MINUTES) > tr.duration) {
-                    // you are now handling the 3rd case, the 1st case does not matter since if it is outside of the
-                    // duration, it is the next iteration's problem
-                    newClass = new Class(aFirstClass.date, aFirstClass.endTime,
-                            aFirstClass.endTime.plusMinutes(tr.duration));
-                    break;
+                if (currTime.compareTo(tr.startTimeRange) <= 0) {
+                    // before the tr.startTimeRange
+
+                    if (isGapBetweenClassesLargerThanDuration(aFirstClass, aSecondClass, tr.duration)) {
+                        // the gap is larger than the duration, so no need to check whether if
+                        // endTimeFromFirstClass.compareTo(startTimeFromSecondClass) <= 0
+                        if (tr.startTimeRange.compareTo(aSecondClass.endTime) >= 0) {
+                            newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                            if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0 && isNotClashWithThirdClass) {
+                                newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                            }
+                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) > 0
+                            && aFirstClass.endTime.compareTo(tr.startTimeRange) <= 0) {
+                            if (endTimeFromTr.compareTo(aSecondClass.startTime) <= 0) {
+                                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                            }
+                        } else if (aFirstClass.endTime.compareTo(tr.startTimeRange) > 0
+                            && aFirstClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                            newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                        } else if (aFirstClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                            if (endTimeFromTr.compareTo(aFirstClass.startTime) <= 0) {
+                                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                            } else {
+                                newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                            }
+                        }
+                    } else {
+                        // view the class as a single class since there is no way there can be a slot between the 2
+                        Class tempClass = new Class(aFirstClass.date, aFirstClass.startTime, aSecondClass.endTime);
+
+                        if (tr.startTimeRange.compareTo(tempClass.endTime) >= 0 && isNotClashWithThirdClass) {
+                            newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                            if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0 && isNotClashWithThirdClass) {
+                                newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                            }
+                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                            if (endTimeFromTr.compareTo(tempClass.startTime) <= 0) {
+                                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                            } else {
+                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                        && isNotClashWithThirdClass) {
+                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                }
+                            }
+                        } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
+                            if (endTimeFromTr.compareTo(tempClass.startTime) <= 0) {
+                                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                            }
+                        }
+                    }
+                } else if (currTime.compareTo(tr.startTimeRange) > 0 && currTime.compareTo(tr.endTimeRange) < 0) {
+                    if (isGapBetweenClassesLargerThanDuration(aFirstClass, aSecondClass, tr.duration)) {
+                        // the gap is larger is smaller than the duration, so need to check whether if
+                        // endTimeFromFirstClass.compareTo(startTimeFromSecondClass) <= 0
+                        if (tr.startTimeRange.compareTo(aSecondClass.endTime) >= 0) {
+                            newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                            if (currTime.compareTo(aSecondClass.endTime) <= 0) {
+                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                        && isNotClashWithThirdClass) {
+                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                }
+                            } else {
+                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                        && isNotClashWithThirdClassFromCurrTime) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            }
+                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) > 0
+                                && aFirstClass.endTime.compareTo(tr.startTimeRange) <= 0) {
+                            if (currTime.compareTo(aSecondClass.startTime) < 0) {
+                                if (endTimeFromCurrTime.compareTo(aSecondClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            } else if (currTime.compareTo(aSecondClass.endTime) <= 0) {
+                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                        && isNotClashWithThirdClass) {
+                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                }
+                            } else {
+                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                    && isNotClashWithThirdClassFromCurrTime) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            }
+                        } else if (aFirstClass.endTime.compareTo(tr.startTimeRange) > 0
+                                && aFirstClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                            if (currTime.compareTo(aFirstClass.startTime) == 0
+                                    && currTime.compareTo(aFirstClass.endTime) <= 0) {
+                                newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                            } else if (currTime.compareTo(aSecondClass.startTime) <= 0) {
+                                if (endTimeFromCurrTime.compareTo(aSecondClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            }
+                        } else if (aFirstClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                            if (currTime.compareTo(aFirstClass.startTime) < 0) {
+                                if (endTimeFromCurrTime.compareTo(aFirstClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            } else if (currTime.compareTo(aFirstClass.startTime) >= 0
+                                && currTime.compareTo(aFirstClass.endTime) <= 0) {
+                                newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                            } else if (currTime.compareTo(aFirstClass.endTime) > 0
+                                    && currTime.compareTo(aSecondClass.startTime) < 0) {
+                                if (endTimeFromCurrTime.compareTo(aFirstClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            } else {
+                                // NEED TO HANDLE CASE WHERE IT IS AFTER THE SECOND CLASS??
+                            }
+                        }
+                    } else {
+                        // view the class as a single class since there is no way there can be a slot between the 2
+                        Class tempClass = new Class(aFirstClass.date, aFirstClass.startTime, aSecondClass.endTime);
+
+                        if (tr.startTimeRange.compareTo(tempClass.endTime) >= 0) {
+                            if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                    && isNotClashWithThirdClassFromCurrTime) {
+                                newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                            }
+                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                            if (currTime.compareTo(tempClass.endTime) < 0
+                                    && currTime.compareTo(tempClass.startTime) > 0) {
+                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                    && isNotClashWithThirdClass) {
+                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                }
+                            } else {
+                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                    && isNotClashWithThirdClassFromCurrTime) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            }
+                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                            if (currTime.compareTo(tempClass.startTime) < 0) {
+                                if (endTimeFromCurrTime.compareTo(tempClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            } else if (currTime.compareTo(tempClass.endTime) > 0) {
+                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                        && isNotClashWithThirdClassFromCurrTime) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            } else {
+                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                    && isNotClashWithThirdClass) {
+                                    newClass = new Class(currDate,startTimeFromSecondClass, endTimeFromSecondClass);
+                                }
+                            }
+                        } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
+                            if (currTime.compareTo(tempClass.startTime) < 0) {
+                                if (endTimeFromCurrTime.compareTo(tempClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 /*
@@ -284,39 +454,185 @@ public class UniqueStudentList implements Iterable<Student> {
                     }
                 }
             }
+
+            if (newClass != null) {
+                break;
+            }
+
+
+            //
+            //            // check whether a class before the first class is possible
+            //            Class fromTrStartTime = new Class(aFirstClass.date, tr.startTimeRange,
+            //                    tr.startTimeRange.plusMinutes(tr.duration));
+            //            if (!ClassStorage.hasConflict(fromTrStartTime.startTime, fromTrStartTime.endTime,
+            //                    aFirstClass.startTime, aFirstClass.endTime)
+            //                    && !ClassStorage.hasConflict(fromTrStartTime.startTime, fromTrStartTime.endTime,
+            //                    aSecondClass.startTime, aSecondClass.endTime)) {
+            //                assert fromTrStartTime.endTime != null;
+            //                newClass = fromTrStartTime;
+            //            }
+            //
+            //            assert aFirstClass.date != null;
+            //            if (aFirstClass.date.equals(aSecondClass.date)) {
+            //                /*
+            //                 * That means they are on the same day
+            //                 * 1st case: When they are side by side. Since the case where it is before the class has been handled,
+            //                 *           we try finding a slot after the end of the secondClass.
+            //                 * 2nd case: When there is a gap, but it is not big enough. If there is a gap, then it is actually
+            //                 *           the same situation as the first case so, it becomes <= tr.duration rather than just == 0
+            //                 *           for the initial first case.
+            //                 * 3rd case: When there is a gap just nice or too big
+            //                 */
+            //                assert aFirstClass.endTime != null;
+            //                assert aSecondClass.startTime != null;
+            //                if (aFirstClass.endTime.until(aSecondClass.startTime, ChronoUnit.MINUTES) > tr.duration) {
+            //                    // you are now handling the 3rd case, the 1st case does not matter since if it is outside of the
+            //                    // duration, it is the next iteration's problem
+            //                    newClass = new Class(aFirstClass.date, aFirstClass.endTime,
+            //                            aFirstClass.endTime.plusMinutes(tr.duration));
+            //                    break;
+            //                }
+            //            }
+            //            else {
+            //                /*
+            //                 * That means they are not on the same day.
+            //                 * Case 1: In which case, you try creating a class which starts after the end of the same class,
+            //                 *         since there wouldn't be a conflict between the 2 class dates.
+            //                 * Case 2: If there are a number of days gap, more than 1, and the timing clashes, then you can
+            //                 *         definitely go to the next day.
+            //                 */
+            //                assert aFirstClass.endTime != null;
+            //                newClass = new Class(aFirstClass.date, aFirstClass.endTime,
+            //                        aFirstClass.endTime.plusMinutes(tr.duration));
+            //                assert newClass.endTime != null;
+            //                if (newClass.endTime.compareTo(tr.endTimeRange) <= 0) {
+            //                    break;
+            //                } else {
+            //                    assert newClass.date != null;
+            //                    assert aSecondClass.date != null;
+            //                    if (newClass.date.until(aSecondClass.date, ChronoUnit.DAYS) > 1) {
+            //                        newClass = new Class(aFirstClass.date.plusDays(1), tr.startTimeRange,
+            //                                tr.startTimeRange.plusMinutes(tr.duration));
+            //                        break;
+            //                    }
+            //                }
+            //            }
+        }
+
+        if (newClass == null) {
+            newClass = new Class(currDate, tr.startTimeRange, tr.startTimeRange.plusMinutes(tr.duration));
         }
 
         return newClass;
     }
 
-    private static Class findAvailableClassWithSingleRecord(TimeRange tr, LocalDate currDate, List<Class> list) {
-        Class newClass;
+    private static Class findAvailableClassWithSingleRecord(TimeRange tr, LocalDate currDate, List<Class> list,
+                                                            LocalTime currTime) {
+        Class newClass = null;
         Class classToCompare = list.get(0);
         // When the startTimeRange is before the earliest slot
         assert classToCompare.endTime != null;
         assert classToCompare.startTime != null;
 
-        if (LocalTime.now().compareTo(tr.endTimeRange) >= 0 && LocalDate.now().equals(classToCompare.date)) {
-            newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
-                    tr.startTimeRange.plusMinutes(tr.duration));
-        } else if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0
-                    || (classToCompare.startTime.compareTo(tr.startTimeRange) >= 0
-                    && tr.startTimeRange.plusMinutes(tr.duration).compareTo(classToCompare.startTime) <= 0)) {
-            newClass = new Class(currDate, tr.startTimeRange,
-                    tr.startTimeRange.plusMinutes(tr.duration));
-        } else if (classToCompare.startTime.compareTo(tr.endTimeRange) >= 0
-                || (classToCompare.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0)) {
-            // When the startTimeRange is after the earliest slot
-            newClass = new Class(currDate, classToCompare.endTime,
-                    classToCompare.endTime.plusMinutes(tr.duration));
+        LocalTime startTimeFromTr = tr.startTimeRange;
+        LocalTime endTimeFromTr = startTimeFromTr.plusMinutes(tr.duration);
+        LocalTime startTimeFromClass = classToCompare.endTime;
+        LocalTime endTimeFromClass = startTimeFromClass.plusMinutes(tr.duration);
+        LocalTime startTimeFromCurrTime = currTime;
+        LocalTime endTimeFromCurrTime = startTimeFromCurrTime.plusMinutes(tr.duration);
+
+        if (!classToCompare.date.equals(currDate)) {
+            newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+        } else if (currTime.compareTo(tr.endTimeRange) >= 0) {
+            // if the currentTime is after and including the end of the time range, just go to the next day
+            newClass = new Class(currDate.plusDays(1), startTimeFromTr, endTimeFromTr);
+        } else if (currTime.compareTo(tr.startTimeRange) <= 0) {
+            // if the currentTime is before and including the start time range
+            if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0) {
+                // the sitaution where the endTime of the class is before the tr.startTimeRange
+                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+            } else if (classToCompare.endTime.compareTo(tr.startTimeRange) > 0
+                    && classToCompare.endTime.compareTo(tr.endTimeRange) < 0
+                    && classToCompare.startTime.compareTo(tr.startTimeRange) <= 0) {
+                // getting the case where the endTime is after the tr.startTimeRange but satisfies the above conditions
+                if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0) {
+                    newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
+                }
+            } else if (classToCompare.endTime.compareTo(tr.startTimeRange) > 0
+                    && classToCompare.endTime.compareTo(tr.endTimeRange) < 0
+                    && classToCompare.startTime.compareTo(tr.startTimeRange) > 0) {
+                if (endTimeFromTr.compareTo(classToCompare.startTime) <= 0) {
+                    // trying to fit a slot from the start of the class
+                    newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                } else if (classToCompare.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+                    // fit a class after the end of the class
+                    newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
+                }
+            } else if (classToCompare.startTime.compareTo(tr.startTimeRange) > 0) {
+                if (endTimeFromTr.compareTo(classToCompare.startTime) <= 0) {
+                    newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                }
+            } else if (classToCompare.startTime.compareTo(tr.endTimeRange) >= 0) {
+                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+            } else {
+                newClass = new Class(currDate.plusDays(1), startTimeFromTr, endTimeFromTr);
+            }
+        } else if (currTime.compareTo(tr.startTimeRange) > 0 && currTime.compareTo(tr.endTimeRange) < 0) {
+            // this means that the currentTime is between the start and end time range
+            if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0) {
+                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
+                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                }
+            } else if (classToCompare.endTime.compareTo(tr.startTimeRange) > 0
+                    && classToCompare.endTime.compareTo(tr.endTimeRange) < 0
+                    && classToCompare.startTime.compareTo(tr.startTimeRange) <= 0) {
+                if (currTime.compareTo(classToCompare.endTime) <= 0) {
+                    newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
+                } else {
+                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
+                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                    }
+                }
+            } else if (classToCompare.endTime.compareTo(tr.endTimeRange) < 0
+                    && classToCompare.startTime.compareTo(tr.startTimeRange) > 0) {
+                if (currTime.compareTo(classToCompare.startTime) < 0) {
+                    if (endTimeFromTr.compareTo(classToCompare.startTime) <= 0) {
+                        newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                    }
+                } else if (currTime.compareTo(classToCompare.startTime) >= 0
+                    && currTime.compareTo(classToCompare.endTime) <= 0) {
+                    if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0) {
+                        newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
+                    }
+                } else if (currTime.compareTo(classToCompare.endTime) > 0) {
+                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
+                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                    }
+                }
+            } else if (classToCompare.startTime.compareTo(tr.startTimeRange) > 0
+                    && classToCompare.endTime.compareTo(tr.endTimeRange) >= 0) {
+                if (currTime.compareTo(classToCompare.startTime) < 0) {
+                    if (endTimeFromCurrTime.compareTo(classToCompare.startTime) <= 0
+                        && endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
+                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                    }
+                }
+            } else {
+                newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
+                        tr.startTimeRange.plusMinutes(tr.duration));
+            }
         } else {
-            // Else go to the next day and find the next available slot
             newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
                     tr.startTimeRange.plusMinutes(tr.duration));
         }
+
         return newClass;
     }
 
+    private static boolean isGapBetweenClassesLargerThanDuration(Class firstClass, Class secondClass,
+                                                                  Integer duration) {
+        return firstClass.endTime.until(secondClass.startTime, ChronoUnit.MINUTES) > duration;
+    }
 
     @Override
     public Iterator<Student> iterator() {

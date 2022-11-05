@@ -9,6 +9,8 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalStudents.ALICE;
 import static seedu.address.testutil.TypicalStudents.BOB;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.model.student.exceptions.DuplicateStudentException;
 import seedu.address.model.student.exceptions.StudentNotFoundException;
+import seedu.address.model.timerange.TimeRange;
 import seedu.address.testutil.StudentBuilder;
 
 public class UniqueStudentListTest {
@@ -166,5 +169,111 @@ public class UniqueStudentListTest {
     public void asUnmodifiableObservableList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, ()
             -> uniqueStudentList.asUnmodifiableObservableList().remove(0));
+    }
+
+    @Test
+    public void findAvailableClassWithSingleRecord_noClass_success() {
+        // pass time
+        LocalTime currTime1 = LocalTime.of(11, 0);
+        LocalTime startTimeRange1 = LocalTime.of(10, 0);
+        LocalTime endTimeRange1 = LocalTime.of(11, 0);
+        Integer duration1 = 60;
+        TimeRange tr1 = new TimeRange(startTimeRange1, endTimeRange1, duration1);
+
+        LocalTime classStartTime1 = LocalTime.of(10, 0);
+        LocalTime classEndTime1 = LocalTime.of(11, 0);
+        Class class1 = new Class(LocalDate.now().plusDays(1), classStartTime1, classEndTime1);
+
+        assertEquals(class1, uniqueStudentList.findAvailableClass(tr1, currTime1));
+
+        // not pass time
+        LocalTime currTime2 = LocalTime.of(10, 0);
+        LocalTime startTimeRange2 = LocalTime.of(10, 0);
+        LocalTime endTimeRange2 = LocalTime.of(11, 0);
+        Integer duration2 = 60;
+        TimeRange tr2 = new TimeRange(startTimeRange2, endTimeRange2, duration2);
+
+        LocalTime classStartTime2 = LocalTime.of(10, 00);
+        LocalTime classEndTime2 = LocalTime.of(11, 00);
+        Class class2 = new Class(LocalDate.now(), classStartTime2, classEndTime2);
+
+        assertEquals(class2, uniqueStudentList.findAvailableClass(tr2, currTime2));
+
+
+        // halfway through time
+        LocalTime currTime3 = LocalTime.of(10, 30);
+        LocalTime startTimeRange3 = LocalTime.of(10, 0);
+        LocalTime endTimeRange3 = LocalTime.of(11, 0);
+        Integer duration3 = 60;
+        TimeRange tr3 = new TimeRange(startTimeRange3, endTimeRange3, duration3);
+
+        LocalTime classStartTime3 = LocalTime.of(10, 00);
+        LocalTime classEndTime3 = LocalTime.of(11, 00);
+        Class class3 = new Class(LocalDate.now().plusDays(1), classStartTime3, classEndTime3);
+
+        assertEquals(class3, uniqueStudentList.findAvailableClass(tr3, currTime3));
+
+        // halfway through time but range long enough, should start from currTime
+        LocalTime currTime4 = LocalTime.of(10, 30);
+        LocalTime startTimeRange4 = LocalTime.of(10, 0);
+        LocalTime endTimeRange4 = LocalTime.of(12, 0);
+        Integer duration4 = 60;
+        TimeRange tr4 = new TimeRange(startTimeRange4, endTimeRange4, duration4);
+
+        LocalTime classStartTime4 = LocalTime.of(10, 30);
+        LocalTime classEndTime4 = LocalTime.of(11, 30);
+        Class class4 = new Class(LocalDate.now(), classStartTime4, classEndTime4);
+
+        assertEquals(class4, uniqueStudentList.findAvailableClass(tr4, currTime4));
+    }
+
+    @Test
+    public void findAvailableClassWithSingleRecord_singleClass_sucess() {
+        Student AliceWithClass = ALICE;
+        AliceWithClass.setClass(new Class(
+                LocalDate.now(), LocalTime.of(12, 0), LocalTime.of(13, 0)));
+        uniqueStudentList.add(AliceWithClass);
+
+
+//
+//        // not pass time - overlap
+//        LocalTime currTime2 = LocalTime.of(4, 0);
+//        LocalTime startTimeRange2 = LocalTime.of(10, 0);
+//        LocalTime endTimeRange2 = LocalTime.of(11, 0);
+//        Integer duration2 = 60;
+//        TimeRange tr2 = new TimeRange(startTimeRange2, endTimeRange2, duration2);
+//
+//        LocalTime classStartTime2 = LocalTime.of(10, 30);
+//        LocalTime classEndTime2 = LocalTime.of(11, 30);
+//        Class class2 = new Class(LocalDate.now(), classStartTime2, classEndTime2);
+//
+//        assertEquals(class2, uniqueStudentList.findAvailableClass(tr2, currTime2));
+//
+//        // not pass time - before class starts
+//        LocalTime currTime1 = LocalTime.of(10, 0);
+//        LocalTime startTimeRange1 = LocalTime.of(10, 0);
+//        LocalTime endTimeRange1 = LocalTime.of(11, 0);
+//        Integer duration1 = 120;
+//        TimeRange tr1 = new TimeRange(startTimeRange1, endTimeRange1, duration1);
+//
+//        LocalTime classStartTime1 = LocalTime.of(10, 0);
+//        LocalTime classEndTime1 = LocalTime.of(11, 0);
+//        Class class1 = new Class(LocalDate.now().plusDays(1), classStartTime1, classEndTime1);
+//
+//        assertEquals(class1, uniqueStudentList.findAvailableClass(tr1, currTime1));
+//
+//        // not pass time - after class starts
+//        LocalTime currTime1 = LocalTime.of(10, 0);
+//        LocalTime startTimeRange1 = LocalTime.of(10, 0);
+//        LocalTime endTimeRange1 = LocalTime.of(11, 0);
+//        Integer duration1 = 120;
+//        TimeRange tr1 = new TimeRange(startTimeRange1, endTimeRange1, duration1);
+//
+//        LocalTime classStartTime1 = LocalTime.of(10, 0);
+//        LocalTime classEndTime1 = LocalTime.of(11, 0);
+//        Class class1 = new Class(LocalDate.now().plusDays(1), classStartTime1, classEndTime1);
+//
+//        assertEquals(class1, uniqueStudentList.findAvailableClass(tr1, currTime1));
+
     }
 }
