@@ -224,12 +224,16 @@ public class UniqueStudentList implements Iterable<Student> {
                     Case 3: If it exceeds the endTimeRange then you look at the next day, but will be handled by next
                             iteration
                  */
+
                 boolean isFirstClassEndOfDay = aFirstClass.endTime.equals(LocalTime.of(0, 0));
                 if (isFirstClassEndOfDay) {
                     break;
                 }
 
-                if (tr.startTimeRange.compareTo(aFirstClass.startTime) < 0) {
+                Class previousClass = list.get(i - 1);
+                boolean hasConflictWithPreviousClass = previousClass.endTime.until(
+                        aFirstClass.startTime, ChronoUnit.MINUTES) < tr.duration;
+                if (!hasConflictWithPreviousClass && tr.startTimeRange.compareTo(aFirstClass.startTime) < 0) {
                     newClass = new Class(aFirstClass.date, tr.startTimeRange,
                             tr.startTimeRange.plusMinutes(tr.duration));
                     assert newClass.endTime != null;
@@ -264,7 +268,6 @@ public class UniqueStudentList implements Iterable<Student> {
             LocalTime startTimeFromCurrTime = currTime;
             LocalTime endTimeFromCurrTime = startTimeFromCurrTime.plusMinutes(tr.duration);
 
-
             Class aThirdClass = i + 2 == list.size() ? null : list.get(i + 2);
             boolean isNotClashWithThirdClass = aThirdClass == null
                     ? true
@@ -284,7 +287,7 @@ public class UniqueStudentList implements Iterable<Student> {
                 }
 
                 if (aFirstClass.date.equals(currDate)) {
-                    if (currTime.compareTo(tr.startTimeRange) <= 0) {
+                    if (currTime.compareTo(tr.startTimeRange) <= 0 && i == 0) {
                         // before the tr.startTimeRange
                         if (isGapBetweenClassesLargerThanDuration(aFirstClass, aSecondClass, tr.duration)) {
                             // the gap is larger than the duration, so no need to check whether if
@@ -449,8 +452,7 @@ public class UniqueStudentList implements Iterable<Student> {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     /*
                      * That means they are on the same day
                      * 1st case: When they are side by side. Since the case where it is before the class has been handled,
