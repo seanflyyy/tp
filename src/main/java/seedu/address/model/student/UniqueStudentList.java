@@ -580,7 +580,8 @@ public class UniqueStudentList implements Iterable<Student> {
                     // fit a class after the end of the class
                     newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
                 }
-            } else if (classToCompare.startTime.compareTo(tr.startTimeRange) > 0) {
+            } else if (classToCompare.startTime.compareTo(tr.startTimeRange) > 0
+                    && classToCompare.endTime.compareTo(tr.endTimeRange) >= 0) {
                 if (endTimeFromTr.compareTo(classToCompare.startTime) <= 0) {
                     newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
                 }
