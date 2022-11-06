@@ -407,7 +407,7 @@ public class UniqueStudentList implements Iterable<Student> {
                                     }
                                 } else if (aFirstClass.endTime.compareTo(tr.startTimeRange) > 0
                                         && requireNonNull(aFirstClass.startTime).compareTo(tr.startTimeRange) <= 0) {
-                                    if (currTime.compareTo(aFirstClass.startTime) == 0
+                                    if (currTime.compareTo(aFirstClass.startTime) >= 0
                                             && currTime.compareTo(aFirstClass.endTime) <= 0) {
                                         newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
                                     } else if (currTime.compareTo(aSecondClass.startTime) <= 0) {
