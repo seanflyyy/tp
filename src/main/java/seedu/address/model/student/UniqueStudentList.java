@@ -552,6 +552,9 @@ public class UniqueStudentList implements Iterable<Student> {
         LocalTime endTimeFromClass = startTimeFromClass.plusMinutes(tr.duration);
         LocalTime startTimeFromCurrTime = currTime;
         LocalTime endTimeFromCurrTime = startTimeFromCurrTime.plusMinutes(tr.duration);
+//        boolean isEndOfDay = classToCompare.endTime.equals(LocalTime.of(0, 0));
+        boolean isEndTimeFromClass = endTimeFromClass.equals(LocalTime.of(0, 0));
+        boolean isEndTimeFromCurrTime = endTimeFromCurrTime.equals(LocalTime.of(0, 0));
 
         if (!classToCompare.date.equals(currDate)) {
             newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
@@ -567,7 +570,7 @@ public class UniqueStudentList implements Iterable<Student> {
                     && classToCompare.endTime.compareTo(tr.endTimeRange) < 0
                     && classToCompare.startTime.compareTo(tr.startTimeRange) <= 0) {
                 // getting the case where the endTime is after the tr.startTimeRange but satisfies the above conditions
-                if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0) {
+                if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0 && !isEndTimeFromClass) {
                     newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
                 }
             } else if (classToCompare.endTime.compareTo(tr.startTimeRange) > 0
@@ -576,7 +579,8 @@ public class UniqueStudentList implements Iterable<Student> {
                 if (endTimeFromTr.compareTo(classToCompare.startTime) <= 0) {
                     // trying to fit a slot from the start of the class
                     newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
-                } else if (classToCompare.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+                } else if (classToCompare.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0
+                    && !isEndTimeFromClass) {
                     // fit a class after the end of the class
                     newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
                 }
@@ -592,7 +596,10 @@ public class UniqueStudentList implements Iterable<Student> {
             }
         } else if (currTime.compareTo(tr.startTimeRange) > 0 && currTime.compareTo(tr.endTimeRange) < 0) {
             // this means that the currentTime is between the start and end time range
-            if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0) {
+            if (classToCompare.endTime.equals(LocalTime.of(0, 0))) {
+                newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
+                        tr.startTimeRange.plusMinutes(tr.duration));
+            } else if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0) {
                 if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
                     newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
                 }
@@ -600,11 +607,11 @@ public class UniqueStudentList implements Iterable<Student> {
                     && classToCompare.endTime.compareTo(tr.endTimeRange) < 0
                     && classToCompare.startTime.compareTo(tr.startTimeRange) <= 0) {
                 if (currTime.compareTo(classToCompare.endTime) <= 0) {
-                    if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0) {
+                    if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0 && !isEndTimeFromClass) {
                         newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
                     }
                 } else {
-                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
+                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0 && !isEndTimeFromCurrTime) {
                         newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
                     }
                 }
@@ -616,7 +623,7 @@ public class UniqueStudentList implements Iterable<Student> {
                     }
                 } else if (currTime.compareTo(classToCompare.startTime) >= 0
                     && currTime.compareTo(classToCompare.endTime) <= 0) {
-                    if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0) {
+                    if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0 && !isEndTimeFromClass) {
                         newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
                     }
                 } else if (currTime.compareTo(classToCompare.endTime) > 0) {
