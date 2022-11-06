@@ -246,11 +246,13 @@ public class UniqueStudentList implements Iterable<Student> {
                         break;
                     }
                 }
-                newClass = new Class(aFirstClass.date, aFirstClass.endTime,
-                        aFirstClass.endTime.plusMinutes(tr.duration));
-                assert newClass.endTime != null;
-                if (newClass.endTime.compareTo(tr.endTimeRange) <= 0) {
-                    break;
+
+                if (currTime.compareTo(aFirstClass.endTime) <= 0
+                    && aFirstClass.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+                    newClass = new Class(aFirstClass.date, aFirstClass.endTime,
+                            aFirstClass.endTime.plusMinutes(tr.duration));
+                } else if (currTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+                    newClass = new Class(aFirstClass.date, currTime, currTime.plusMinutes(tr.duration));
                 } else {
                     assert aFirstClass.date != null;
                     newClass = new Class(aFirstClass.date.plusDays(1),
@@ -258,6 +260,7 @@ public class UniqueStudentList implements Iterable<Student> {
                 }
                 break;
             }
+
             if (currTime.compareTo(tr.endTimeRange) >= 0 && aFirstClass.date.equals(currDate)) {
                 // you want to skip all the classes on the same day if currTime is outside the time window
                 continue;
@@ -445,7 +448,7 @@ public class UniqueStudentList implements Iterable<Student> {
                                 } else {
                                     if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
                                             && isNotClashWithThirdClass) {
-                                        newClass = new Class(currDate,startTimeFromSecondClass, endTimeFromSecondClass);
+                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
                                     }
                                 }
                             } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
@@ -485,83 +488,44 @@ public class UniqueStudentList implements Iterable<Student> {
                  * Case 2: If there are a number of days gap, more than 1, and the timing clashes, then you can
                  *         definitely go to the next day.
                  */
+                Class previousClass = list.get(i - 1);
+                boolean hasConflictWithPreviousClass = previousClass.endTime.until(
+                        aFirstClass.startTime, ChronoUnit.MINUTES) < tr.duration
+                        && previousClass.date.equals(aFirstClass.date);
+
                 assert aFirstClass.endTime != null;
-                if (tr.startTimeRange.plusMinutes(tr.duration).compareTo(aFirstClass.startTime) <= 0) {
+//                if (currTime.compareTo(aFirstClass.endTime) <= 0
+//                        && aFirstClass.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+//                    newClass = new Class(aFirstClass.date, aFirstClass.endTime,
+//                            aFirstClass.endTime.plusMinutes(tr.duration));
+//                } else if (currTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+//                    newClass = new Class(aFirstClass.date, currTime, currTime.plusMinutes(tr.duration));
+//                } else {
+//                    assert aFirstClass.date != null;
+//                    newClass = new Class(aFirstClass.date.plusDays(1),
+//                            tr.startTimeRange, tr.startTimeRange.plusMinutes(tr.duration));
+//                }
+
+                if (currTime.compareTo(aFirstClass.endTime) <= 0
+                    && tr.startTimeRange.plusMinutes(tr.duration).compareTo(aFirstClass.startTime) <= 0
+                    && !hasConflictWithPreviousClass) {
                     newClass = new Class(aFirstClass.date, tr.startTimeRange,
                             tr.startTimeRange.plusMinutes(tr.duration));
-                } else if (aFirstClass.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+                } else if (currTime.compareTo(aFirstClass.endTime) <= 0
+                        && aFirstClass.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
                     newClass = new Class(aFirstClass.date, aFirstClass.endTime,
                             aFirstClass.endTime.plusMinutes(tr.duration));
-                    break;
+                } else if (currTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+                    newClass = new Class(aFirstClass.date, currTime, currTime.plusMinutes(tr.duration));
                 } else if (aFirstClass.date.until(aSecondClass.date, ChronoUnit.DAYS) > 1) {
                     newClass = new Class(aFirstClass.date.plusDays(1), tr.startTimeRange,
                             tr.startTimeRange.plusMinutes(tr.duration));
-                    break;
                 }
             }
 
             if (newClass != null) {
                 break;
             }
-
-
-            //
-            //            // check whether a class before the first class is possible
-            //            Class fromTrStartTime = new Class(aFirstClass.date, tr.startTimeRange,
-            //                    tr.startTimeRange.plusMinutes(tr.duration));
-            //            if (!ClassStorage.hasConflict(fromTrStartTime.startTime, fromTrStartTime.endTime,
-            //                    aFirstClass.startTime, aFirstClass.endTime)
-            //                    && !ClassStorage.hasConflict(fromTrStartTime.startTime, fromTrStartTime.endTime,
-            //                    aSecondClass.startTime, aSecondClass.endTime)) {
-            //                assert fromTrStartTime.endTime != null;
-            //                newClass = fromTrStartTime;
-            //            }
-            //
-            //            assert aFirstClass.date != null;
-            //            if (aFirstClass.date.equals(aSecondClass.date)) {
-            //                /*
-            //                 * That means they are on the same day
-            //                 * 1st case: When they are side by side. Since the case where it is before the class has been handled,
-            //                 *           we try finding a slot after the end of the secondClass.
-            //                 * 2nd case: When there is a gap, but it is not big enough. If there is a gap, then it is actually
-            //                 *           the same situation as the first case so, it becomes <= tr.duration rather than just == 0
-            //                 *           for the initial first case.
-            //                 * 3rd case: When there is a gap just nice or too big
-            //                 */
-            //                assert aFirstClass.endTime != null;
-            //                assert aSecondClass.startTime != null;
-            //                if (aFirstClass.endTime.until(aSecondClass.startTime, ChronoUnit.MINUTES) > tr.duration) {
-            //                    // you are now handling the 3rd case, the 1st case does not matter since if it is outside of the
-            //                    // duration, it is the next iteration's problem
-            //                    newClass = new Class(aFirstClass.date, aFirstClass.endTime,
-            //                            aFirstClass.endTime.plusMinutes(tr.duration));
-            //                    break;
-            //                }
-            //            }
-            //            else {
-            //                /*
-            //                 * That means they are not on the same day.
-            //                 * Case 1: In which case, you try creating a class which starts after the end of the same class,
-            //                 *         since there wouldn't be a conflict between the 2 class dates.
-            //                 * Case 2: If there are a number of days gap, more than 1, and the timing clashes, then you can
-            //                 *         definitely go to the next day.
-            //                 */
-            //                assert aFirstClass.endTime != null;
-            //                newClass = new Class(aFirstClass.date, aFirstClass.endTime,
-            //                        aFirstClass.endTime.plusMinutes(tr.duration));
-            //                assert newClass.endTime != null;
-            //                if (newClass.endTime.compareTo(tr.endTimeRange) <= 0) {
-            //                    break;
-            //                } else {
-            //                    assert newClass.date != null;
-            //                    assert aSecondClass.date != null;
-            //                    if (newClass.date.until(aSecondClass.date, ChronoUnit.DAYS) > 1) {
-            //                        newClass = new Class(aFirstClass.date.plusDays(1), tr.startTimeRange,
-            //                                tr.startTimeRange.plusMinutes(tr.duration));
-            //                        break;
-            //                    }
-            //                }
-            //            }
         }
 
         if (newClass == null) {
@@ -572,7 +536,15 @@ public class UniqueStudentList implements Iterable<Student> {
         return newClass;
     }
 
-    private static Class findAvailableClassWithSingleRecord(TimeRange tr, LocalDate currDate, List<Class> list,
+    /**
+     * Find next available class when there is only one class.
+     * @param tr the timeRange.
+     * @param currDate the current date.
+     * @param list the list of Classes.
+     * @param currTime the currTime.
+     * @return the next available class.
+     */
+    public static Class findAvailableClassWithSingleRecord(TimeRange tr, LocalDate currDate, List<Class> list,
                                                             LocalTime currTime) {
         Class newClass = null;
         Class classToCompare = list.get(0);
