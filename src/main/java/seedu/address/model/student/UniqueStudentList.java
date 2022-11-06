@@ -18,7 +18,6 @@ import javafx.collections.ObservableList;
 import seedu.address.model.student.exceptions.DuplicateStudentException;
 import seedu.address.model.student.exceptions.StudentNotFoundException;
 import seedu.address.model.timerange.TimeRange;
-import seedu.address.storage.ClassStorage;
 
 /**
  * A list of students that enforces uniqueness between its elements and does not allow nulls.
@@ -303,7 +302,8 @@ public class UniqueStudentList implements Iterable<Student> {
                             if (tr.startTimeRange.compareTo(aSecondClass.endTime) >= 0) {
                                 newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
                             } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) <= 0) {
-                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0 && isNotClashWithThirdClass) {
+                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                        && isNotClashWithThirdClass) {
                                     newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
                                 }
                             } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) > 0
@@ -342,7 +342,8 @@ public class UniqueStudentList implements Iterable<Student> {
                                 } else {
                                     if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
                                             && isNotClashWithThirdClass) {
-                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                        newClass = new Class(currDate, startTimeFromSecondClass,
+                                                endTimeFromSecondClass);
                                     }
                                 }
                             } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
@@ -361,7 +362,8 @@ public class UniqueStudentList implements Iterable<Student> {
                                 if (currTime.compareTo(aSecondClass.endTime) <= 0) {
                                     if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
                                             && isNotClashWithThirdClass) {
-                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                        newClass = new Class(currDate, startTimeFromSecondClass,
+                                                endTimeFromSecondClass);
                                     }
                                 } else {
                                     if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
@@ -378,7 +380,8 @@ public class UniqueStudentList implements Iterable<Student> {
                                 } else if (currTime.compareTo(aSecondClass.endTime) <= 0) {
                                     if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
                                             && isNotClashWithThirdClass) {
-                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                        newClass = new Class(currDate, startTimeFromSecondClass,
+                                                endTimeFromSecondClass);
                                     }
                                 } else {
                                     if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
@@ -427,7 +430,8 @@ public class UniqueStudentList implements Iterable<Student> {
                                         && currTime.compareTo(tempClass.startTime) > 0) {
                                     if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
                                             && isNotClashWithThirdClass) {
-                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                        newClass = new Class(currDate, startTimeFromSecondClass,
+                                                endTimeFromSecondClass);
                                     }
                                 } else {
                                     if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
@@ -448,7 +452,8 @@ public class UniqueStudentList implements Iterable<Student> {
                                 } else {
                                     if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
                                             && isNotClashWithThirdClass) {
-                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                        newClass = new Class(currDate, startTimeFromSecondClass,
+                                                endTimeFromSecondClass);
                                     }
                                 }
                             } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
@@ -463,11 +468,11 @@ public class UniqueStudentList implements Iterable<Student> {
                 } else {
                     /*
                      * That means they are on the same day
-                     * 1st case: When they are side by side. Since the case where it is before the class has been handled,
-                     *           we try finding a slot after the end of the secondClass.
+                     * 1st case: When they are side by side. Since the case where it is before the class has
+                     *           been handled, we try finding a slot after the end of the secondClass.
                      * 2nd case: When there is a gap, but it is not big enough. If there is a gap, then it is actually
-                     *           the same situation as the first case so, it becomes <= tr.duration rather than just == 0
-                     *           for the initial first case.
+                     *           the same situation as the first case so, it becomes <= tr.duration rather than
+                     *           just == 0 for the initial first case.
                      * 3rd case: When there is a gap just nice or too big
                      */
                     assert aFirstClass.endTime != null;
@@ -494,17 +499,6 @@ public class UniqueStudentList implements Iterable<Student> {
                         && previousClass.date.equals(aFirstClass.date);
 
                 assert aFirstClass.endTime != null;
-//                if (currTime.compareTo(aFirstClass.endTime) <= 0
-//                        && aFirstClass.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
-//                    newClass = new Class(aFirstClass.date, aFirstClass.endTime,
-//                            aFirstClass.endTime.plusMinutes(tr.duration));
-//                } else if (currTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
-//                    newClass = new Class(aFirstClass.date, currTime, currTime.plusMinutes(tr.duration));
-//                } else {
-//                    assert aFirstClass.date != null;
-//                    newClass = new Class(aFirstClass.date.plusDays(1),
-//                            tr.startTimeRange, tr.startTimeRange.plusMinutes(tr.duration));
-//                }
 
                 if (currTime.compareTo(aFirstClass.endTime) <= 0
                     && tr.startTimeRange.plusMinutes(tr.duration).compareTo(aFirstClass.startTime) <= 0
