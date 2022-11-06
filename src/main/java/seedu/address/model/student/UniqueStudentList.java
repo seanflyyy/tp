@@ -11,7 +11,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -147,27 +146,15 @@ public class UniqueStudentList implements Iterable<Student> {
      */
     public Class findAvailableClass(TimeRange tr, LocalTime currTime) {
         LocalDate currDate = LocalDate.now();
-        List<Class> listAfterToday = internalList
+        List<Class> list = internalList
                 .stream()
                 .filter(student -> student.getAClass().startTime != null
                         && student.getAClass().endTime != null
                         && student.getAClass().date != null
-                        && student.getAClass().date.compareTo(currDate) > 0)
+                        && student.getAClass().date.compareTo(currDate) >= 0)
                 .sorted(Student::compareToByClassAsc)
                 .map((element) -> element.getAClass())
                 .collect(Collectors.toList());
-        List<Class> listSameDay = internalList
-                .stream()
-                .filter(student -> student.getDisplayedClass().startTime != null
-                        && student.getDisplayedClass().endTime != null
-                        && student.getDisplayedClass().date != null
-                        && student.getDisplayedClass().date.compareTo(currDate) == 0)
-                .sorted(Student::compareToByClassAsc)
-                .map((element) -> element.getDisplayedClass())
-                .collect(Collectors.toList());
-        List<Class> list = Stream.concat(listSameDay.stream(), listAfterToday.stream())
-                .collect(Collectors.toList());
-
         Class newClass = null;
 
 
