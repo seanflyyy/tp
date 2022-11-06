@@ -158,10 +158,7 @@ public class UniqueStudentList implements Iterable<Student> {
                 .collect(Collectors.toList());
         Class newClass = null;
 
-
-        if (list.size() == 0 || (list.size() > 1
-                && !list.get(0).date.equals(currDate)
-                && currTime.compareTo(tr.startTimeRange) <= 0)) {
+        if (list.size() == 0 || (list.size() > 1 && !list.get(0).date.equals(currDate))) {
             // Case where there is only no classes or where the first element on the list has a date after currDate,
             // this means that there are no classes scheduled on the current day and is equivalent to list.size() == 0
             LocalTime startTime = tr.startTimeRange;
