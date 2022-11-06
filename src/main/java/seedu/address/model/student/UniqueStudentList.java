@@ -171,8 +171,9 @@ public class UniqueStudentList implements Iterable<Student> {
 
         Class newClass = null;
 
-        // Case where there is only 1 class
+
         if (list.size() == 0) {
+            // Case where there is only no classes
             LocalTime startTime = tr.startTimeRange;
             LocalTime endTime = startTime.plusMinutes(tr.duration);
             // Link to design: https://arc.net/e/B15E0B60-817D-4B24-8397-FC0E0B37F8C1
@@ -223,6 +224,10 @@ public class UniqueStudentList implements Iterable<Student> {
                     Case 3: If it exceeds the endTimeRange then you look at the next day, but will be handled by next
                             iteration
                  */
+                boolean isFirstClassEndOfDay = aFirstClass.endTime.equals(LocalTime.of(0, 0));
+                if (isFirstClassEndOfDay) {
+                    break;
+                }
 
                 if (tr.startTimeRange.compareTo(aFirstClass.startTime) < 0) {
                     newClass = new Class(aFirstClass.date, tr.startTimeRange,
@@ -259,7 +264,8 @@ public class UniqueStudentList implements Iterable<Student> {
             LocalTime startTimeFromCurrTime = currTime;
             LocalTime endTimeFromCurrTime = startTimeFromCurrTime.plusMinutes(tr.duration);
 
-            Class aThirdClass = list.get(i + 1);
+
+            Class aThirdClass = i + 2 == list.size() ? null : list.get(i + 2);
             boolean isNotClashWithThirdClass = aThirdClass == null
                     ? true
                     : endTimeFromSecondClass.compareTo(aThirdClass.startTime) <= 0;
@@ -267,167 +273,201 @@ public class UniqueStudentList implements Iterable<Student> {
                     ? true
                     : endTimeFromCurrTime.compareTo(aThirdClass.startTime) <= 0;
 
+            // boolean which checks whether the endTime is at the end of the day, it if it, then it is at the end of
+            // the day and no timeRange can be larger than it
+            boolean isSecondClassEndOfDay = aSecondClass.endTime.equals(LocalTime.of(0, 0));
+            boolean isFirstClassEndOfDay = aFirstClass.endTime.equals(LocalTime.of(0, 0));
 
             if (aFirstClass.date.equals(aSecondClass.date)) {
-                if (currTime.compareTo(tr.startTimeRange) <= 0) {
-                    // before the tr.startTimeRange
+                if (isFirstClassEndOfDay || isSecondClassEndOfDay) {
+                    continue;
+                }
 
-                    if (isGapBetweenClassesLargerThanDuration(aFirstClass, aSecondClass, tr.duration)) {
-                        // the gap is larger than the duration, so no need to check whether if
-                        // endTimeFromFirstClass.compareTo(startTimeFromSecondClass) <= 0
-                        if (tr.startTimeRange.compareTo(aSecondClass.endTime) >= 0) {
-                            newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
-                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) <= 0) {
-                            if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0 && isNotClashWithThirdClass) {
-                                newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
-                            }
-                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) > 0
-                            && aFirstClass.endTime.compareTo(tr.startTimeRange) <= 0) {
-                            if (endTimeFromTr.compareTo(aSecondClass.startTime) <= 0) {
+                if (aFirstClass.date.equals(currDate)) {
+                    if (currTime.compareTo(tr.startTimeRange) <= 0) {
+                        // before the tr.startTimeRange
+                        if (isGapBetweenClassesLargerThanDuration(aFirstClass, aSecondClass, tr.duration)) {
+                            // the gap is larger than the duration, so no need to check whether if
+                            // endTimeFromFirstClass.compareTo(startTimeFromSecondClass) <= 0
+                            if (tr.startTimeRange.compareTo(aSecondClass.endTime) >= 0) {
                                 newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
-                            }
-                        } else if (aFirstClass.endTime.compareTo(tr.startTimeRange) > 0
-                            && aFirstClass.startTime.compareTo(tr.startTimeRange) <= 0) {
-                            newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
-                        } else if (aFirstClass.startTime.compareTo(tr.startTimeRange) > 0) {
-                            if (endTimeFromTr.compareTo(aFirstClass.startTime) <= 0) {
-                                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
-                            } else {
+                            } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0 && isNotClashWithThirdClass) {
+                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                }
+                            } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) > 0
+                                    && aFirstClass.endTime.compareTo(tr.startTimeRange) <= 0) {
+                                if (endTimeFromTr.compareTo(aSecondClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                                }
+                            } else if (aFirstClass.endTime.compareTo(tr.startTimeRange) > 0
+                                    && aFirstClass.startTime.compareTo(tr.startTimeRange) <= 0) {
                                 newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                            } else if (aFirstClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                                if (endTimeFromTr.compareTo(aFirstClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                                } else {
+                                    newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                                }
                             }
-                        }
-                    } else {
-                        // view the class as a single class since there is no way there can be a slot between the 2
-                        Class tempClass = new Class(aFirstClass.date, aFirstClass.startTime, aSecondClass.endTime);
+                        } else {
+                            // view the class as a single class since there is no way there can be a slot between the 2
+                            Class tempClass = new Class(aFirstClass.date, aFirstClass.startTime, aSecondClass.endTime);
+                            boolean isTempClassEndOfDay = tempClass.endTime.equals(LocalTime.of(0, 0));
+                            if (isTempClassEndOfDay) {
+                                continue;
+                            }
 
-                        if (tr.startTimeRange.compareTo(tempClass.endTime) >= 0 && isNotClashWithThirdClass) {
-                            newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
-                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) <= 0) {
-                            if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0 && isNotClashWithThirdClass) {
-                                newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
-                            }
-                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) > 0) {
-                            if (endTimeFromTr.compareTo(tempClass.startTime) <= 0) {
+                            if (tr.startTimeRange.compareTo(tempClass.endTime) >= 0 && isNotClashWithThirdClass) {
                                 newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
-                            } else {
+                            } else if (tempClass.startTime.compareTo(tr.startTimeRange) <= 0) {
                                 if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
                                         && isNotClashWithThirdClass) {
                                     newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
                                 }
+                            } else if (tempClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                                if (endTimeFromTr.compareTo(tempClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                                } else {
+                                    if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClass) {
+                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                    }
+                                }
+                            } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
+                                if (endTimeFromTr.compareTo(tempClass.startTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                                }
                             }
-                        } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
-                            if (endTimeFromTr.compareTo(tempClass.startTime) <= 0) {
-                                newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
+                        }
+                    } else if (currTime.compareTo(tr.startTimeRange) > 0 && currTime.compareTo(tr.endTimeRange) < 0) {
+                        if (isGapBetweenClassesLargerThanDuration(aFirstClass, aSecondClass, tr.duration)) {
+                            // the gap is larger is smaller than the duration, so need to check whether if
+                            // endTimeFromFirstClass.compareTo(startTimeFromSecondClass) <= 0
+                            if (tr.startTimeRange.compareTo(aSecondClass.endTime) >= 0) {
+                                newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                            } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                                if (currTime.compareTo(aSecondClass.endTime) <= 0) {
+                                    if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClass) {
+                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                    }
+                                } else {
+                                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClassFromCurrTime) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                }
+                            } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) > 0
+                                    && aFirstClass.endTime.compareTo(tr.startTimeRange) <= 0) {
+                                if (currTime.compareTo(aSecondClass.startTime) < 0) {
+                                    if (endTimeFromCurrTime.compareTo(aSecondClass.startTime) <= 0) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                } else if (currTime.compareTo(aSecondClass.endTime) <= 0) {
+                                    if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClass) {
+                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                    }
+                                } else {
+                                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClassFromCurrTime) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                }
+                            } else if (aFirstClass.endTime.compareTo(tr.startTimeRange) > 0
+                                    && aFirstClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                                if (currTime.compareTo(aFirstClass.startTime) == 0
+                                        && currTime.compareTo(aFirstClass.endTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                                } else if (currTime.compareTo(aSecondClass.startTime) <= 0) {
+                                    if (endTimeFromCurrTime.compareTo(aSecondClass.startTime) <= 0) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                }
+                            } else if (aFirstClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                                if (currTime.compareTo(aFirstClass.startTime) < 0) {
+                                    if (endTimeFromCurrTime.compareTo(aFirstClass.startTime) <= 0) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                } else if (currTime.compareTo(aFirstClass.startTime) >= 0
+                                        && currTime.compareTo(aFirstClass.endTime) <= 0) {
+                                    newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
+                                } else if (currTime.compareTo(aFirstClass.endTime) > 0
+                                        && currTime.compareTo(aSecondClass.startTime) < 0) {
+                                    if (endTimeFromCurrTime.compareTo(aFirstClass.startTime) <= 0) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                } else {
+                                    // NEED TO HANDLE CASE WHERE IT IS AFTER THE SECOND CLASS??
+                                }
+                            }
+                        } else {
+                            // view the class as a single class since there is no way there can be a slot between the 2
+                            Class tempClass = new Class(aFirstClass.date, aFirstClass.startTime, aSecondClass.endTime);
+
+                            if (tr.startTimeRange.compareTo(tempClass.endTime) >= 0) {
+                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                        && isNotClashWithThirdClassFromCurrTime) {
+                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                }
+                            } else if (tempClass.startTime.compareTo(tr.startTimeRange) <= 0) {
+                                if (currTime.compareTo(tempClass.endTime) < 0
+                                        && currTime.compareTo(tempClass.startTime) > 0) {
+                                    if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClass) {
+                                        newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
+                                    }
+                                } else {
+                                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClassFromCurrTime) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                }
+                            } else if (tempClass.startTime.compareTo(tr.startTimeRange) > 0) {
+                                if (currTime.compareTo(tempClass.startTime) < 0) {
+                                    if (endTimeFromCurrTime.compareTo(tempClass.startTime) <= 0) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                } else if (currTime.compareTo(tempClass.endTime) > 0) {
+                                    if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClassFromCurrTime) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                } else {
+                                    if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
+                                            && isNotClashWithThirdClass) {
+                                        newClass = new Class(currDate,startTimeFromSecondClass, endTimeFromSecondClass);
+                                    }
+                                }
+                            } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
+                                if (currTime.compareTo(tempClass.startTime) < 0) {
+                                    if (endTimeFromCurrTime.compareTo(tempClass.startTime) <= 0) {
+                                        newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                                    }
+                                }
                             }
                         }
                     }
-                } else if (currTime.compareTo(tr.startTimeRange) > 0 && currTime.compareTo(tr.endTimeRange) < 0) {
-                    if (isGapBetweenClassesLargerThanDuration(aFirstClass, aSecondClass, tr.duration)) {
-                        // the gap is larger is smaller than the duration, so need to check whether if
-                        // endTimeFromFirstClass.compareTo(startTimeFromSecondClass) <= 0
-                        if (tr.startTimeRange.compareTo(aSecondClass.endTime) >= 0) {
-                            newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) <= 0) {
-                            if (currTime.compareTo(aSecondClass.endTime) <= 0) {
-                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
-                                        && isNotClashWithThirdClass) {
-                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
-                                }
-                            } else {
-                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
-                                        && isNotClashWithThirdClassFromCurrTime) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            }
-                        } else if (aSecondClass.startTime.compareTo(tr.startTimeRange) > 0
-                                && aFirstClass.endTime.compareTo(tr.startTimeRange) <= 0) {
-                            if (currTime.compareTo(aSecondClass.startTime) < 0) {
-                                if (endTimeFromCurrTime.compareTo(aSecondClass.startTime) <= 0) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            } else if (currTime.compareTo(aSecondClass.endTime) <= 0) {
-                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
-                                        && isNotClashWithThirdClass) {
-                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
-                                }
-                            } else {
-                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
-                                    && isNotClashWithThirdClassFromCurrTime) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            }
-                        } else if (aFirstClass.endTime.compareTo(tr.startTimeRange) > 0
-                                && aFirstClass.startTime.compareTo(tr.startTimeRange) <= 0) {
-                            if (currTime.compareTo(aFirstClass.startTime) == 0
-                                    && currTime.compareTo(aFirstClass.endTime) <= 0) {
-                                newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
-                            } else if (currTime.compareTo(aSecondClass.startTime) <= 0) {
-                                if (endTimeFromCurrTime.compareTo(aSecondClass.startTime) <= 0) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            }
-                        } else if (aFirstClass.startTime.compareTo(tr.startTimeRange) > 0) {
-                            if (currTime.compareTo(aFirstClass.startTime) < 0) {
-                                if (endTimeFromCurrTime.compareTo(aFirstClass.startTime) <= 0) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            } else if (currTime.compareTo(aFirstClass.startTime) >= 0
-                                && currTime.compareTo(aFirstClass.endTime) <= 0) {
-                                newClass = new Class(currDate, startTimeFromFirstClass, endTimeFromFirstClass);
-                            } else if (currTime.compareTo(aFirstClass.endTime) > 0
-                                    && currTime.compareTo(aSecondClass.startTime) < 0) {
-                                if (endTimeFromCurrTime.compareTo(aFirstClass.startTime) <= 0) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            } else {
-                                // NEED TO HANDLE CASE WHERE IT IS AFTER THE SECOND CLASS??
-                            }
-                        }
-                    } else {
-                        // view the class as a single class since there is no way there can be a slot between the 2
-                        Class tempClass = new Class(aFirstClass.date, aFirstClass.startTime, aSecondClass.endTime);
-
-                        if (tr.startTimeRange.compareTo(tempClass.endTime) >= 0) {
-                            if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
-                                    && isNotClashWithThirdClassFromCurrTime) {
-                                newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                            }
-                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) <= 0) {
-                            if (currTime.compareTo(tempClass.endTime) < 0
-                                    && currTime.compareTo(tempClass.startTime) > 0) {
-                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
-                                    && isNotClashWithThirdClass) {
-                                    newClass = new Class(currDate, startTimeFromSecondClass, endTimeFromSecondClass);
-                                }
-                            } else {
-                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
-                                    && isNotClashWithThirdClassFromCurrTime) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            }
-                        } else if (tempClass.startTime.compareTo(tr.startTimeRange) > 0) {
-                            if (currTime.compareTo(tempClass.startTime) < 0) {
-                                if (endTimeFromCurrTime.compareTo(tempClass.startTime) <= 0) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            } else if (currTime.compareTo(tempClass.endTime) > 0) {
-                                if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0
-                                        && isNotClashWithThirdClassFromCurrTime) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            } else {
-                                if (endTimeFromSecondClass.compareTo(tr.endTimeRange) <= 0
-                                    && isNotClashWithThirdClass) {
-                                    newClass = new Class(currDate,startTimeFromSecondClass, endTimeFromSecondClass);
-                                }
-                            }
-                        } else if (tempClass.endTime.compareTo(tr.endTimeRange) >= 0) {
-                            if (currTime.compareTo(tempClass.startTime) < 0) {
-                                if (endTimeFromCurrTime.compareTo(tempClass.startTime) <= 0) {
-                                    newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
-                                }
-                            }
-                        }
+                }
+                else {
+                    /*
+                     * That means they are on the same day
+                     * 1st case: When they are side by side. Since the case where it is before the class has been handled,
+                     *           we try finding a slot after the end of the secondClass.
+                     * 2nd case: When there is a gap, but it is not big enough. If there is a gap, then it is actually
+                     *           the same situation as the first case so, it becomes <= tr.duration rather than just == 0
+                     *           for the initial first case.
+                     * 3rd case: When there is a gap just nice or too big
+                     */
+                    assert aFirstClass.endTime != null;
+                    assert aSecondClass.startTime != null;
+                    if (aFirstClass.endTime.until(aSecondClass.startTime, ChronoUnit.MINUTES) > tr.duration) {
+                        // you are now handling the 3rd case, the 1st case does not matter since if it is outside of the
+                        // duration, it is the next iteration's problem
+                        newClass = new Class(aFirstClass.date, aFirstClass.endTime,
+                                aFirstClass.endTime.plusMinutes(tr.duration));
+                        break;
                     }
                 }
             } else {
@@ -520,7 +560,8 @@ public class UniqueStudentList implements Iterable<Student> {
         }
 
         if (newClass == null) {
-            newClass = new Class(currDate, tr.startTimeRange, tr.startTimeRange.plusMinutes(tr.duration));
+            newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
+                    tr.startTimeRange.plusMinutes(tr.duration));
         }
 
         return newClass;
