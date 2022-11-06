@@ -552,7 +552,7 @@ public class UniqueStudentList implements Iterable<Student> {
         LocalTime endTimeFromClass = startTimeFromClass.plusMinutes(tr.duration);
         LocalTime startTimeFromCurrTime = currTime;
         LocalTime endTimeFromCurrTime = startTimeFromCurrTime.plusMinutes(tr.duration);
-//        boolean isEndOfDay = classToCompare.endTime.equals(LocalTime.of(0, 0));
+
         boolean isEndTimeFromClass = endTimeFromClass.equals(LocalTime.of(0, 0));
         boolean isEndTimeFromCurrTime = endTimeFromCurrTime.equals(LocalTime.of(0, 0));
 
@@ -591,14 +591,11 @@ public class UniqueStudentList implements Iterable<Student> {
                 }
             } else if (classToCompare.startTime.compareTo(tr.endTimeRange) >= 0) {
                 newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
-            } else {
-                newClass = new Class(currDate.plusDays(1), startTimeFromTr, endTimeFromTr);
             }
         } else if (currTime.compareTo(tr.startTimeRange) > 0 && currTime.compareTo(tr.endTimeRange) < 0) {
             // this means that the currentTime is between the start and end time range
             if (classToCompare.endTime.equals(LocalTime.of(0, 0))) {
-                newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
-                        tr.startTimeRange.plusMinutes(tr.duration));
+                newClass = new Class(currDate.plusDays(1), startTimeFromTr, endTimeFromTr);
             } else if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0) {
                 if (endTimeFromCurrTime.compareTo(tr.endTimeRange) <= 0) {
                     newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
@@ -620,6 +617,10 @@ public class UniqueStudentList implements Iterable<Student> {
                 if (currTime.compareTo(classToCompare.startTime) < 0) {
                     if (endTimeFromCurrTime.compareTo(classToCompare.startTime) <= 0) {
                         newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
+                    } else {
+                        if (endTimeFromClass.compareTo(tr.endTimeRange) <= 0 && !isEndTimeFromClass) {
+                            newClass = new Class(currDate, startTimeFromClass, endTimeFromClass);
+                        }
                     }
                 } else if (currTime.compareTo(classToCompare.startTime) >= 0
                     && currTime.compareTo(classToCompare.endTime) <= 0) {
@@ -639,18 +640,11 @@ public class UniqueStudentList implements Iterable<Student> {
                         newClass = new Class(currDate, startTimeFromCurrTime, endTimeFromCurrTime);
                     }
                 }
-            } else {
-                newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
-                        tr.startTimeRange.plusMinutes(tr.duration));
             }
-        } else {
-            newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
-                    tr.startTimeRange.plusMinutes(tr.duration));
         }
 
         if (newClass == null) {
-            newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
-                    tr.startTimeRange.plusMinutes(tr.duration));
+            newClass = new Class(currDate.plusDays(1), startTimeFromTr, endTimeFromTr);
         }
 
         return newClass;
