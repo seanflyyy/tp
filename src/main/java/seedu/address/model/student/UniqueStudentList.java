@@ -561,7 +561,7 @@ public class UniqueStudentList implements Iterable<Student> {
         } else if (currTime.compareTo(tr.startTimeRange) <= 0) {
             // if the currentTime is before and including the start time range
             if (classToCompare.endTime.compareTo(tr.startTimeRange) <= 0) {
-                // the sitaution where the endTime of the class is before the tr.startTimeRange
+                // the situation where the endTime of the class is before the tr.startTimeRange
                 newClass = new Class(currDate, startTimeFromTr, endTimeFromTr);
             } else if (classToCompare.endTime.compareTo(tr.startTimeRange) > 0
                     && classToCompare.endTime.compareTo(tr.endTimeRange) < 0
