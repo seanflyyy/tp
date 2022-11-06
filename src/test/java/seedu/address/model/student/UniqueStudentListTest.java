@@ -560,8 +560,5 @@ public class UniqueStudentListTest {
         aliceWithClass14.setClass(class14);
         uniqueStudentList14.add(aliceWithClass14);
         assertEquals(outputClass14, uniqueStudentList14.findAvailableClass(timeWindow, currTime1));
-
-
-
     }
 }
