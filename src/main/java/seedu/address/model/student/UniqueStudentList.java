@@ -224,6 +224,10 @@ public class UniqueStudentList implements Iterable<Student> {
                     Case 3: If it exceeds the endTimeRange then you look at the next day, but will be handled by next
                             iteration
                  */
+                if (currTime.compareTo(tr.endTimeRange) >= 0 && aFirstClass.date.equals(currDate)) {
+                    // you want to skip all the classes on the same day if currTime is outside the time window
+                    break;
+                }
 
                 boolean isFirstClassEndOfDay = aFirstClass.endTime.equals(LocalTime.of(0, 0));
                 if (isFirstClassEndOfDay) {
@@ -232,7 +236,8 @@ public class UniqueStudentList implements Iterable<Student> {
 
                 Class previousClass = list.get(i - 1);
                 boolean hasConflictWithPreviousClass = previousClass.endTime.until(
-                        aFirstClass.startTime, ChronoUnit.MINUTES) < tr.duration;
+                        aFirstClass.startTime, ChronoUnit.MINUTES) < tr.duration
+                        && previousClass.date.equals(aFirstClass.date);
                 if (!hasConflictWithPreviousClass && tr.startTimeRange.compareTo(aFirstClass.startTime) < 0) {
                     newClass = new Class(aFirstClass.date, tr.startTimeRange,
                             tr.startTimeRange.plusMinutes(tr.duration));
@@ -481,19 +486,17 @@ public class UniqueStudentList implements Iterable<Student> {
                  *         definitely go to the next day.
                  */
                 assert aFirstClass.endTime != null;
-                newClass = new Class(aFirstClass.date, aFirstClass.endTime,
-                        aFirstClass.endTime.plusMinutes(tr.duration));
-                assert newClass.endTime != null;
-                if (newClass.endTime.compareTo(tr.endTimeRange) <= 0) {
+                if (tr.startTimeRange.plusMinutes(tr.duration).compareTo(aFirstClass.startTime) <= 0) {
+                    newClass = new Class(aFirstClass.date, tr.startTimeRange,
+                            tr.startTimeRange.plusMinutes(tr.duration));
+                } else if (aFirstClass.endTime.plusMinutes(tr.duration).compareTo(tr.endTimeRange) <= 0) {
+                    newClass = new Class(aFirstClass.date, aFirstClass.endTime,
+                            aFirstClass.endTime.plusMinutes(tr.duration));
                     break;
-                } else {
-                    assert newClass.date != null;
-                    assert aSecondClass.date != null;
-                    if (newClass.date.until(aSecondClass.date, ChronoUnit.DAYS) > 1) {
-                        newClass = new Class(aFirstClass.date.plusDays(1), tr.startTimeRange,
-                                tr.startTimeRange.plusMinutes(tr.duration));
-                        break;
-                    }
+                } else if (aFirstClass.date.until(aSecondClass.date, ChronoUnit.DAYS) > 1) {
+                    newClass = new Class(aFirstClass.date.plusDays(1), tr.startTimeRange,
+                            tr.startTimeRange.plusMinutes(tr.duration));
+                    break;
                 }
             }
 
@@ -669,12 +672,17 @@ public class UniqueStudentList implements Iterable<Student> {
                     tr.startTimeRange.plusMinutes(tr.duration));
         }
 
+        if (newClass == null) {
+            newClass = new Class(currDate.plusDays(1), tr.startTimeRange,
+                    tr.startTimeRange.plusMinutes(tr.duration));
+        }
+
         return newClass;
     }
 
     private static boolean isGapBetweenClassesLargerThanDuration(Class firstClass, Class secondClass,
                                                                   Integer duration) {
-        return firstClass.endTime.until(secondClass.startTime, ChronoUnit.MINUTES) > duration;
+        return firstClass.endTime.until(secondClass.startTime, ChronoUnit.MINUTES) >= duration;
     }
 
     @Override
