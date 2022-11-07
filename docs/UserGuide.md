@@ -144,8 +144,8 @@ Format: `help`
 Adds a student to the Teacher’s Pet.
 
 ##### Student’s Name:
-    - Student’s Name must not be empty.
-    - Student’s Name must only contain alphanumeric characters.
+- Student’s Name must not be empty.
+- Student’s Name must only contain alphanumeric characters.
     
 <div markdown="span" class="alert alert-info">ℹ **Note:** Multiple students may share the same name.
 </div>
@@ -159,36 +159,36 @@ Adds a student to the Teacher’s Pet.
 </div>
 
 ##### Next of Kin’s Contact Number:
-    - Next of Kin’s contact number must not be empty.
-    - Next of Kin’s contact number must only contain numerical digits between `0` and `9`.
-    - Next of Kin’s contact number must begin with `6`, `8` or `9`.
+- Next of Kin’s contact number must not be empty.
+- Next of Kin’s contact number must only contain numerical digits between `0` and `9`.
+- Next of Kin’s contact number must begin with `6`, `8` or `9`.
 
 <div markdown="span" class="alert alert-info">ℹ **Note:** Next of Kin’s contact number must contain exactly 8 digits.
 </div>
 
 ##### Address:
-    - Address must not be empty.
-    - Address may contain any kinds of character.
+- Address must not be empty.
+- Address may contain any kinds of character.
 
 <div markdown="span" class="alert alert-info">ℹ **Note:** Address cannot be empty. It must contain at least 1 character.
 </div>
 
 ##### Email:
-    - Email must not be empty. 
-    - Email should be in the format of `local@domain`, where:
-      - Local address should only contain alphanumeric characters and these special characters
-        `+_.-`.
-      - Consecutive special characters are not supported.
-      - The domain name must:
-        1. End with a domain label at least 2 characters long.
-        2. Have each domain label start and end with alphanumeric characters.
-        3. Have each domain label consist of alphanumeric characters, separated only by hyphens,
-           if any.
+- Email must not be empty. 
+- Email should be in the format of `local@domain`, where:
+  - Local address should only contain alphanumeric characters and these special characters
+    `+_.-`.
+  - Consecutive special characters are not supported.
+  - The domain name must:
+    1. End with a domain label at least 2 characters long.
+    2. Have each domain label start and end with alphanumeric characters.
+    3. Have each domain label consist of alphanumeric characters, separated only by hyphens,
+       if any.
 
 ##### Tags:
-    - Tags are optional.
-    - A student can have any number of tags (including 0).
-    - Tags must only contain alphanumeric characters.
+- Tags are optional.
+- A student can have any number of tags (including 0).
+- Tags must only contain alphanumeric characters.
     
 <div markdown="span" class="alert alert-info">ℹ **Note:** Tags must contain at least 1 alphanumeric character, cannot contain spacings and limited to `40` characters long.
 </div>
@@ -199,7 +199,8 @@ Example:
 
 - `add n/Ben Tan p/87201223 np/90125012 e/BenTan@gmail.com a/Avenue 712`
 
-![Add](images/UG-screenshots/UiAdd.png)
+![Add](images/UG-screenshots/UiAddBefore.png)
+![Add](images/UG-screenshots/UiAddAfter.png)
 
 <div markdown="span" class="alert alert-info">ℹ **Note:** Amount paid, Amount owed, Rates per Class, and Additional notes fields are to be updated via `edit` command.
 </div>
@@ -278,11 +279,15 @@ Format: `edit INDEX [n/NAME] [p/CONTACT_NUMBER] [np/NEXT_OF_KIN_CONTACT_NUMBER] 
 
 Examples:
 
-- `edit 1 e/Ben2022@gmail.com`
+- `edit 7 e/Ben2022@gmail.com`
 
-![UiEdit](images/UG-screenshots/UiEdit.png)
+![UiEdit](images/UG-screenshots/UiEditBefore.png)
+![UiEdit](images/UG-screenshots/UiEditAfter.png)
 
-- `edit 1 dt/tue 1100-1200`
+- `edit 7 dt/2022-11-07 1200-1300`
+
+![UiEdit](images/UG-screenshots/UiEditBefore2.png)
+![UiEdit](images/UG-screenshots/UiEditAfter2.png)
 
 [↑ Back to top](#table-of-contents)
 
@@ -307,7 +312,8 @@ Format: `mark INDEX-s`
 Example:
 - `mark 1` marks the 1st student in the Schedule panel.
 
-![UiMark](images/UG-screenshots/UiMark.png)
+![UiMark](images/UG-screenshots/UiMarkBefore.png)
+![UiMark](images/UG-screenshots/UiMarkAfter.png)
 
 <div markdown="span" class="alert alert-info">ℹ **Note:** Notice how the student's name changed to red? This is because the student now owes money!
 </div>
@@ -330,9 +336,10 @@ Format: `pay INDEX-s AMOUNT_PAID`
 - The `AMOUNT_PAID` must be an integer and cannot be negative. e.g., `0, 1, 2, ...`.
 
 Example:
-- `pay 2 40` indicates that the 2nd student in the Schedule panel has paid $40.
+- `pay 1 40` indicates that the 2nd student in the Schedule panel has paid $40.
 
-![UiPay](images/UG-screenshots/UiPay.png)
+![UiPay](images/UG-screenshots/UiPayBefore.png)
+![UiPay](images/UG-screenshots/UiPayAfter.png)
 
 <div markdown="span" class="alert alert-info">ℹ **Note:** The student cannot pay more than what he/she owes. There is also a maximum cap of
   $2147483647 for every payment.
@@ -359,7 +366,8 @@ Allows the user to view students and their information which includes:
 
 Format: `list`
 
-![UiUList](images/UG-screenshots/UiList.png)
+![UiUList](images/UG-screenshots/UiListBefore.png)
+![UiUList](images/UG-screenshots/UiListAfter.png)
 
 [↑ Back to top](#table-of-contents)
 
@@ -395,9 +403,10 @@ Format: `find n/KEYWORD [MORE_KEYWORDS]`
 
 Example:
 
-`find n/alex` returns `Alex Yeoh`.
+`find n/Yeoh` returns `Alex Yeoh`.
 
-![UiFindName](images/UG-screenshots/UiFindName.png)
+![UiFindName](images/UG-screenshots/UiFindNameBefore.png)
+![UiFindName](images/UG-screenshots/UiFindNameAfter.png)
 
 #### Find by Email:
 
@@ -509,30 +518,13 @@ other tags on top of the two tags.
 ---
 ### Next available class: `avail`
 
-Finds the next available class given a time range and duration and returns the next available class within the time 
-range, with the specified class duration and after the current time.
+While there is no available command at the moment, you can find the next available class through a series of steps.
 
-Format: `avail TIME_RANGE DURATION`
+1. Use [find command](#finding-a-student-find), to find a specific day: `find dt/2022-11-07` will find the students
+   who have classes on `2022-11-07`
+2. Use [sort command](#sort-the-displayed-students-sort), to sort by class: `sort class asc`.
+3. View each class for the student under the [Student List](#ui-overview) until you find the slot you want.
 
-- The `TIME_RANGE` would follow a 24-hour format of 0000-2359.
-- The `DURATION` is in minutes.
-
-<div markdown="span" class="alert alert-danger">❗ **Caution:** The duration should not exceed the time range. e.g., If the time range is 1000-1100
-and the duration is 70, this would be invalid.
-</div>
-
-Examples:
-- Given that there is 1 student on the current day of 2022-10-27 from 0900-1000 and the current time is 0800 HRS, `
-avail 1100-1200 60` would return `2022-10-27 1100-1200` since there is no student at that slot.
-- Given that there is 1 student on the current day of 2022-10-27 from 0900-1000 and the current time is 1105 HRS, 
-`avail 1100-1200 60` would return `2022-10-28 1100-1200` since the 1100-1200 60 window today has passed. 
-- Given that there are 2 students on the current day of 2022-10-27 from 0900-1000 and at 1030-1130 and the current
-time is 0800 HRS, `avail 0830-1300 60` would return `2022-10-27 1130-1230` as the next slot since there is no 
-sufficient duration between 1000-1030 for a 60 minutes class.
-- Given that there are 2 students on the current day of 2022-10-27 from 0900-1000 and at 1030-1130 and the current
-time is 1200 HRS, `avail 0830-1300 60` would return `2022-10-27 1200-1300` as the next slot since there is no sufficient
-duration between 1000-1030 for a 60 minutes class, and it is the next suitable time window based on the current time.
- 
 [↑ Back to top](#table-of-contents)
 
 ---
